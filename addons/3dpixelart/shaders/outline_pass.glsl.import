@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://dykxi1uvlmopx"
+path="res://.godot/imported/outline_pass.glsl-92d9bae41626629a866e78c81abd005e.res"
+
+[deps]
+
+source_file="res://addons/3dpixelart/shaders/outline_pass.glsl"
+dest_files=["res://.godot/imported/outline_pass.glsl-92d9bae41626629a866e78c81abd005e.res"]
+
+[params]
+

@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://b5t8oj4wmptg8"
+path="res://.godot/imported/export_metadata.glsl-f276d8283582b839d66f1156e000938b.res"
+
+[deps]
+
+source_file="res://addons/3dpixelart/shaders/export_metadata.glsl"
+dest_files=["res://.godot/imported/export_metadata.glsl-f276d8283582b839d66f1156e000938b.res"]
+
+[params]
+

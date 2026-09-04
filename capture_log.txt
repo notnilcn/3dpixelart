@@ -1,0 +1,61 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+Vulkan 1.4.349 - Forward+ - Using Device #0: AMD - AMD Radeon(TM) 860M Graphics
+
+PixelArtObject3D '@Node3D@8': added metadata render layer (mask 0x80000) to target '@MeshInstance3D@7'.
+PixelArtObject3D '@Node3D@10': added metadata render layer (mask 0x80000) to target '@MeshInstance3D@9'.
+PixelArtObject3D '@Node3D@12': added metadata render layer (mask 0x80000) to target '@MeshInstance3D@11'.
+PixelArtObject3D '@Node3D@14': added metadata render layer (mask 0x80000) to target '@MeshInstance3D@13'.
+PixelArtObject3D '@Node3D@22': added metadata render layer (mask 0x80000) to target '@MeshInstance3D@21'.
+PixelArtObject3D '@Node3D@24': added metadata render layer (mask 0x80000) to target '@MeshInstance3D@23'.
+PixelArtObject3D '@Node3D@26': added metadata render layer (mask 0x80000) to target '@MeshInstance3D@25'.
+PixelArtObject3D '@Node3D@28': added metadata render layer (mask 0x80000) to target '@MeshInstance3D@27'.
+PixelArtObject3D '@Node3D@30': added metadata render layer (mask 0x80000) to target '@MeshInstance3D@29'.
+PixelArtObject3D '@Node3D@32': added metadata render layer (mask 0x80000) to target '@MeshInstance3D@31'.
+PixelArtObject3D '@Node3D@34': added metadata render layer (mask 0x80000) to target '@MeshInstance3D@33'.
+capture mode: will screenshot after 120 frames
+PixelArtMacroPixelPass: apply dispatching OK
+metadata export frames: 119
+shared metadata color saved: 0
+shared metadata depth saved: 0
+metadata viewport texture saved: 0
+screenshot saved: 0
+ERROR: Texture (binding: 5, index 0) is not a valid texture.
+   at: uniform_set_create (servers/rendering/rendering_device.cpp:4502)
+ERROR: Parameter "us" is null.
+   at: uniform_set_set_invalidation_callback (servers/rendering/rendering_device.cpp:4809)
+ERROR: Texture (binding: 5, index 0) is not a valid texture.
+   at: uniform_set_create (servers/rendering/rendering_device.cpp:4502)
+ERROR: Parameter "us" is null.
+   at: uniform_set_set_invalidation_callback (servers/rendering/rendering_device.cpp:4809)
+ERROR: Texture (binding: 5, index 0) is not a valid texture.
+   at: uniform_set_create (servers/rendering/rendering_device.cpp:4502)
+ERROR: Parameter "us" is null.
+   at: uniform_set_set_invalidation_callback (servers/rendering/rendering_device.cpp:4809)
+ERROR: Texture (binding: 5, index 0) is not a valid texture.
+   at: uniform_set_create (servers/rendering/rendering_device.cpp:4502)
+ERROR: Parameter "us" is null.
+   at: uniform_set_set_invalidation_callback (servers/rendering/rendering_device.cpp:4809)
+ERROR: Texture (binding: 5, index 0) is not a valid texture.
+   at: uniform_set_create (servers/rendering/rendering_device.cpp:4502)
+ERROR: Parameter "us" is null.
+   at: uniform_set_set_invalidation_callback (servers/rendering/rendering_device.cpp:4809)
+ERROR: Texture (binding: 5, index 0) is not a valid texture.
+   at: uniform_set_create (servers/rendering/rendering_device.cpp:4502)
+ERROR: Parameter "us" is null.
+   at: uniform_set_set_invalidation_callback (servers/rendering/rendering_device.cpp:4809)
+ERROR: Texture (binding: 5, index 0) is not a valid texture.
+   at: uniform_set_create (servers/rendering/rendering_device.cpp:4502)
+ERROR: Parameter "us" is null.
+   at: uniform_set_set_invalidation_callback (servers/rendering/rendering_device.cpp:4809)
+ERROR: Texture (binding: 5, index 0) is not a valid texture.
+   at: uniform_set_create (servers/rendering/rendering_device.cpp:4502)
+ERROR: Parameter "us" is null.
+   at: uniform_set_set_invalidation_callback (servers/rendering/rendering_device.cpp:4809)
+ERROR: Texture (binding: 5, index 0) is not a valid texture.
+   at: uniform_set_create (servers/rendering/rendering_device.cpp:4502)
+ERROR: Parameter "us" is null.
+   at: uniform_set_set_invalidation_callback (servers/rendering/rendering_device.cpp:4809)
+ERROR: Texture (binding: 5, index 0) is not a valid texture.
+   at: uniform_set_create (servers/rendering/rendering_device.cpp:4502)
+ERROR: Parameter "us" is null.
+   at: uniform_set_set_invalidation_callback (servers/rendering/rendering_device.cpp:4809)

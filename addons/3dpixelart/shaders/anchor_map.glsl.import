@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://0pu352i1khgq"
+path="res://.godot/imported/anchor_map.glsl-625596851209fe31b1eaa781f9a2e4cb.res"
+
+[deps]
+
+source_file="res://addons/3dpixelart/shaders/anchor_map.glsl"
+dest_files=["res://.godot/imported/anchor_map.glsl-625596851209fe31b1eaa781f9a2e4cb.res"]
+
+[params]
+

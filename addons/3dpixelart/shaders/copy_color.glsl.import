@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://sohycamjxx4e"
+path="res://.godot/imported/copy_color.glsl-9d18364464808b1802f85529123a3066.res"
+
+[deps]
+
+source_file="res://addons/3dpixelart/shaders/copy_color.glsl"
+dest_files=["res://.godot/imported/copy_color.glsl-9d18364464808b1802f85529123a3066.res"]
+
+[params]
+
