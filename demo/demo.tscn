@@ -4,3 +4,4 @@
 
 [node name="Demo" type="Node3D" unique_id=1561135343]
 script = ExtResource("1_demo")
+auto_orbit = false

@@ -108,6 +108,23 @@ extends Node
 	set(value):
 		cloud_shadow_strength = value
 		_push_cloud_params()
+## Multi-level banded shadows (hard contour rings) vs smooth soft shadows.
+@export var cloud_shadow_banding_enabled := true:
+	set(value):
+		cloud_shadow_banding_enabled = value
+		_push_cloud_params()
+## Darkness levels when banding; 1 = binary hard shadow.
+@export_range(1.0, 8.0, 1.0) var cloud_shadow_levels := 3.0:
+	set(value):
+		cloud_shadow_levels = value
+		_push_cloud_params()
+## Width of the coverage gradient below the threshold: the shadow ramps from
+## faint to full across [cloud_threshold - softness, cloud_threshold]. 0 = hard
+## edge, 1 = the penumbra spans the whole noise range below the threshold.
+@export_range(0.0, 1.0) var cloud_shadow_softness := 0.4:
+	set(value):
+		cloud_shadow_softness = value
+		_push_cloud_params()
 ## God rays through the cloud gaps, added to the scene color *before*
 ## pixelization so the rays get macro-pixels too. Tuning lives on the
 ## PixelArtGodRayPass (see [method get_god_ray_pass]).
@@ -143,6 +160,9 @@ var _metadata_color_texture: RID
 var _metadata_depth_texture: RID
 var _outlines_texture_rd := Texture2DRD.new()
 var _materials: Array = []
+# Non-pixelized materials that still receive the cloud-shadow uniforms
+# (terrain, water): registered via register_cloud_material.
+var _cloud_materials: Array = []
 
 var _ready_done := false
 
@@ -256,6 +276,7 @@ func _teardown() -> void:
 	if _rd != null:
 		RenderingServer.call_on_render_thread(_free_textures_rt)
 	_materials.clear()
+	_cloud_materials.clear()
 	_ready_done = false
 
 
@@ -340,6 +361,13 @@ func _create_textures(size: Vector2i) -> void:
 
 
 func _create_textures_rt(size: Vector2i) -> void:
+	# Invalidate the shared RIDs BEFORE freeing the old textures: the compositor
+	# passes early-return on invalid shared textures, so this closes the window
+	# where a pass builds a uniform set with a just-freed RID ("Texture (binding:
+	# N) is not a valid texture" errors on viewport resize).
+	PixelArtSharedBuffers.outlines = RID()
+	PixelArtSharedBuffers.metadata_color = RID()
+	PixelArtSharedBuffers.metadata_depth = RID()
 	if _outlines_texture.is_valid():
 		_rd.free_rid(_outlines_texture)
 	if _metadata_color_texture.is_valid():
@@ -484,6 +512,23 @@ func unregister_material(material: Material) -> void:
 	_materials.erase(material)
 
 
+## Registers a non-pixelized material (e.g. terrain, water) to receive ONLY
+## the cloud-shadow uniforms — no outline texture or metadata mask. The
+## material's shader must implement the cloud coverage itself (same uniform
+## names as pixel_art_object.gdshader).
+func register_cloud_material(material: Material) -> void:
+	if material == null or _cloud_materials.has(material):
+		return
+	_cloud_materials.append(material)
+	_push_cloud_params_to(material)
+	if clouds_enabled and cloud_sun != null:
+		material.set_shader_parameter("cloud_sun_dir", -cloud_sun.global_transform.basis.z)
+
+
+func unregister_cloud_material(material: Material) -> void:
+	_cloud_materials.erase(material)
+
+
 func _update_material_metadata() -> void:
 	for i in range(_materials.size() - 1, -1, -1):
 		var material: Material = _materials[i]
@@ -505,6 +550,12 @@ func _push_cloud_params() -> void:
 			_materials.remove_at(i)
 			continue
 		_push_cloud_params_to(material)
+	for i in range(_cloud_materials.size() - 1, -1, -1):
+		var cloud_material: Material = _cloud_materials[i]
+		if cloud_material == null:
+			_cloud_materials.remove_at(i)
+			continue
+		_push_cloud_params_to(cloud_material)
 	if _god_ray_pass != null:
 		_god_ray_pass.cloud_noise = cloud_noise
 		_god_ray_pass.cloud_height = cloud_height
@@ -525,6 +576,9 @@ func _push_cloud_params_to(material: Material) -> void:
 	material.set_shader_parameter("cloud_bands", cloud_bands)
 	material.set_shader_parameter("cloud_wind", cloud_wind)
 	material.set_shader_parameter("cloud_shadow_strength", cloud_shadow_strength)
+	material.set_shader_parameter("cloud_shadow_banding_enabled", cloud_shadow_banding_enabled)
+	material.set_shader_parameter("cloud_shadow_levels", cloud_shadow_levels)
+	material.set_shader_parameter("cloud_shadow_softness", cloud_shadow_softness)
 
 
 func _push_cloud_sun_dir(dir: Vector3) -> void:
@@ -534,5 +588,11 @@ func _push_cloud_sun_dir(dir: Vector3) -> void:
 			_materials.remove_at(i)
 			continue
 		material.set_shader_parameter("cloud_sun_dir", dir)
+	for i in range(_cloud_materials.size() - 1, -1, -1):
+		var cloud_material: Material = _cloud_materials[i]
+		if cloud_material == null:
+			_cloud_materials.remove_at(i)
+			continue
+		cloud_material.set_shader_parameter("cloud_sun_dir", dir)
 	if _god_ray_pass != null:
 		_god_ray_pass.cloud_sun_dir = dir

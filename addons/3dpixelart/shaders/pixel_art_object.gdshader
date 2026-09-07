@@ -74,6 +74,12 @@ uniform float cloud_threshold : hint_range(0.0, 1.0) = 0.5;
 uniform float cloud_bands = 3.0;
 uniform vec2 cloud_wind = vec2(0.02, 0.0); // dir * speed
 uniform float cloud_shadow_strength : hint_range(0.0, 1.0) = 0.6;
+// Shadow shaping: coverage ramps from 0 to 1 across
+// [cloud_threshold - cloud_shadow_softness, cloud_threshold], optionally
+// quantized into cloud_shadow_levels discrete darkness steps (contour bands).
+uniform bool cloud_shadow_banding_enabled = true;
+uniform float cloud_shadow_levels = 3.0;
+uniform float cloud_shadow_softness : hint_range(0.0, 1.0) = 0.4;
 
 // ---------------------------------------------------------------------------
 // Metadata pass
@@ -144,6 +150,20 @@ vec3 color_grade(vec3 color, vec2 macro_pixel_delta) {
 	return textureLod(palette_lut, vec2(u, v), 0.0).rgb;
 }
 
+// Cloud shadow shaping: raw noise -> fraction of sun blocked. The coverage
+// ramps from 0 to 1 across [threshold - softness, threshold], so the widest
+// faintest band borders the clear sky and the core above the threshold is
+// uniformly darkest; banding quantizes the ramp into discrete levels.
+float cloud_coverage_from_noise(float n) {
+	float edge0 = clamp(cloud_threshold - max(cloud_shadow_softness, 0.001), 0.0, 1.0);
+	float cov = smoothstep(edge0, cloud_threshold, n);
+	if (cloud_shadow_banding_enabled) {
+		float levels = max(cloud_shadow_levels, 1.0);
+		cov = floor(cov * levels + 0.5) / levels;
+	}
+	return cov;
+}
+
 void vertex() {
 	pivot_obj_clip = PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4(0.0, 0.0, 0.0, 1.0);
 	pivot_grid_clip = PROJECTION_MATRIX * VIEW_MATRIX * vec4(pixel_grid_origin, 1.0);
@@ -156,7 +176,7 @@ void fragment() {
 	vec2 uv = UV * albedo_st.xy + albedo_st.zw;
 	vec4 tex = sample_pixel_texture(albedo_texture, uv);
 	float alpha = use_alpha ? tex.a * base_color.a : 1.0;
-	cloud_coverage = 1.0;
+	cloud_coverage = 0.0;
 
 	if (in_shadow_pass > 0.5) {
 		// Shadow/depth-only passes (port of PixelUtils.hlsl SHADOWTEST):
@@ -229,17 +249,16 @@ void fragment() {
 		} else {
 			// --- Lit appearance ---------------------------------------------
 			// Cloud shadows: project the fragment's world position onto the
-			// cloud plane along the sun direction; banded coverage attenuates
-			// the toon ramp in light(). cloud_sun_dir is the direction the
-			// light travels (downward), so t comes out negative.
+			// cloud plane along the sun direction; the shaped coverage
+			// attenuates the toon ramp in light(). cloud_sun_dir is the
+			// direction the light travels (downward), so t comes out negative.
 			if (clouds_enabled && cloud_sun_dir.y < -0.02) {
 				vec3 world_pos = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 				float cloud_t = (cloud_height - world_pos.y) / cloud_sun_dir.y;
 				vec2 cloud_uv = (world_pos + cloud_sun_dir * cloud_t).xz * cloud_noise_scale
 					+ cloud_wind * TIME;
 				float cloud_n = textureLod(cloud_noise, cloud_uv, 0.0).r;
-				float banded = floor(cloud_n * cloud_bands) / max(cloud_bands - 1.0, 1.0);
-				cloud_coverage = step(cloud_threshold, banded);
+				cloud_coverage = cloud_coverage_from_noise(cloud_n);
 			}
 
 			vec3 albedo = tex.rgb * base_color.rgb;
@@ -284,7 +303,8 @@ void light() {
 		float ndl = clamp(dot(NORMAL, LIGHT), 0.0, 1.0);
 		vec3 ramp = textureLod(lighting_ramp, vec2(ndl, 0.5), 0.0).rgb;
 		float att = receive_shadows ? ATTENUATION : 1.0;
-		att *= mix(1.0, cloud_coverage, cloud_shadow_strength);
+		// cloud_coverage is the fraction of sun blocked (0 = clear).
+		att *= 1.0 - cloud_coverage * cloud_shadow_strength;
 		DIFFUSE_LIGHT += ramp * LIGHT_COLOR * att * (1.0 - id_outline);
 		SPECULAR_LIGHT = vec3(0.0);
 	}

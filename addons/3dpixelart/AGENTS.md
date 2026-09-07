@@ -69,7 +69,11 @@ read them before touching the render pipeline. The demo scene is
 
 - RenderingDevice is not main-thread-safe: create/free RD textures via
   `RenderingServer.call_on_render_thread(...)` (see
-  `PixelArtPipeline3D._create_textures_rt`).
+  `PixelArtPipeline3D._create_textures_rt`). On viewport resize the shared
+  RIDs in `PixelArtSharedBuffers` are invalidated BEFORE the old textures are
+  freed, so compositor passes early-return instead of building uniform sets
+  with just-freed RIDs ("Texture (binding: N) is not a valid texture" spam) —
+  keep that ordering.
 - **The god-ray pass must precede the macro-pixel pass in the compositor
   effects array** — same-callback-type (POST_SKY) effects run in array order,
   and the rays must be in the color layer before `copy_color` so they get
@@ -80,7 +84,20 @@ read them before touching the render pipeline. The demo scene is
 - **The pipeline pushes cloud uniforms to registered materials** (on export
   change and on `register_material`) and pushes `cloud_sun_dir` to materials
   + the god-ray pass every frame in `_process` when clouds are enabled. Keep
-  these pushes in sync when adding cloud uniforms.
+  these pushes in sync when adding cloud uniforms. Non-pixelized materials
+  (terrain, water) register via `register_cloud_material` (the
+  `_cloud_materials` list) to receive ONLY the cloud uniforms — their shaders
+  must implement the coverage themselves under the same uniform names
+  (`mst_terrain.gdshaderinc` and the game's `water.gdshader` are the
+  reference implementations).
+- **Cloud-shadow coverage is the fraction of sun blocked** (0 = clear, 1 =
+  overcast): `smoothstep(threshold - softness, threshold, n)` over the raw
+  noise, quantized into `cloud_shadow_levels` when
+  `cloud_shadow_banding_enabled` (hard contour rings vs smooth penumbra).
+  Materials darken by `1 - coverage * cloud_shadow_strength`. (The pre-fix
+  code did `mix(1.0, coverage, strength)` on a binary step — that darkened
+  the cloud GAPS, inverted from the god-ray/sky convention.) `cloud_bands`
+  now feeds only the sky sheet / god-ray gap quantization.
 - **Editing a `.glsl` compute shader requires a reimport** or stale SPIR-V is
   used. `.gdshader` changes are picked up on game start.
 - Requires Forward+ or Mobile; MSAA off; `scaling_3d_scale` 1.0.
@@ -105,7 +122,14 @@ packed metadata buffer.
 
 ## Known loose ends
 
-- Benign "Texture (binding: 5) not a valid texture" errors on quit.
+- `PixelArtPipeline3D` syncs the metadata camera in `_process` at default
+  process priority 0 — if something updates the main camera later in the frame
+  (e.g. a camera host at process_priority 300), the metadata render runs one
+  frame behind and moving objects dissolve into their anchor-dot grid. Raise
+  the pipeline node's `process_priority` above whatever drives the camera.
 - Transparent pixelized objects composite against un-pixelated depth
-  (pixelated depth write-back not ported).
+  (pixelated depth write-back not ported). Corollary: pixelized objects write
+  depth only at anchor fragments, so ANY transparent surface between the
+  camera and a pixelized object draws over it (the object "dissolves" into
+  anchor dots) — keep such surfaces opaque/alpha-scissor.
 - `save_shared_textures_debug` depth row-length guard is approximate.

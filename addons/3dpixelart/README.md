@@ -62,19 +62,25 @@ Drives the entire render pipeline for one camera.
 | **Color Grading** | |
 | `global_palette_lut` | Optional palette LUT (baked by `PixelPalette`) applied to all pixelized pixels after lighting. |
 | **Clouds** | |
-| `clouds_enabled` | Banded cloud shadows on pixelized materials (off by default). |
+| `clouds_enabled` | Cloud shadows on pixelized materials (off by default). |
 | `cloud_noise` | Coverage noise texture (sampled `filter_nearest`, scrolling). |
 | `cloud_sun` | `DirectionalLight3D` casting the cloud shadows/rays; its direction is pushed to materials every frame. |
 | `cloud_height` | Height of the imaginary cloud plane (default 10). |
-| `cloud_noise_scale` / `cloud_threshold` / `cloud_bands` | Noise zoom, coverage cutoff, and stepped banding of the noise (matches the toon ramp). |
+| `cloud_noise_scale` / `cloud_threshold` / `cloud_bands` | Noise zoom, coverage cutoff, and noise quantization for the god-ray gaps. |
 | `cloud_wind` | Wind direction × speed; scrolls the noise. |
 | `cloud_shadow_strength` | How much clouds attenuate the toon ramp (ambient untouched). |
+| `cloud_shadow_banding_enabled` | Quantize the shadow into discrete darkness levels (hard contour rings) vs a smooth penumbra (default on). |
+| `cloud_shadow_levels` | Darkness levels when banding (default 3; 1 = binary hard shadow). |
+| `cloud_shadow_softness` | Width of the penumbra below `cloud_threshold` the shadow ramps across (default 0.4). |
 | `god_rays_enabled` | Add god rays through the cloud gaps *before* pixelization, so the rays get macro-pixels too. Tune via `get_god_ray_pass()` (steps, intensity, decay, quantize bands, dust). |
 | **Debug** | |
 | `debug_view` | 0 = off, 1 = anchor map, 2 = metadata buffer, 3 = metadata depth. |
 
 Methods: `register_material(material)` / `unregister_material(material)`
 (called automatically by `PixelArtObject3D`),
+`register_cloud_material(material)` / `unregister_cloud_material(material)`
+(feeds ONLY the cloud-shadow uniforms to a non-pixelized material — the shader
+must implement the coverage itself under the same uniform names),
 `save_shared_textures_debug(color_path, depth_path)` (dumps the shared
 metadata textures as PNGs).
 
@@ -158,9 +164,13 @@ The pipeline's **Clouds** group adds two effects from the Pixel Perfect
 
 - **Cloud shadows**: each pixelized material projects its fragments onto an
   imaginary cloud plane along the sun direction and attenuates only the toon
-  ramp (ambient is untouched) with stepped, banded coverage. Per-material by
-  design — only materials using `pixel_art_object.gdshader` receive cloud
-  shadows (e.g. `StandardMaterial3D` props don't).
+  ramp (ambient is untouched). Coverage is the fraction of sun blocked:
+  `smoothstep(cloud_threshold - cloud_shadow_softness, cloud_threshold, n)`,
+  optionally quantized into `cloud_shadow_levels` discrete darkness steps
+  (`cloud_shadow_banding_enabled`) — hard contour rings vs a smooth penumbra.
+  Pixelized materials receive it automatically; any other shader can join in
+  via `register_cloud_material` if it implements the same coverage under the
+  same uniform names (see `pixel_art_object.gdshader`).
 - **God rays**: a `POST_SKY` compute pass (`PixelArtGodRayPass`) marches from
   the camera toward each pixel's reconstructed world position, accumulating
   the gaps in the cloud coverage (endpoint-lerp optimization: both endpoints
